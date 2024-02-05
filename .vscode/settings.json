@@ -1,0 +1,10 @@
+{
+	"cSpell.words": [
+		"Fastify"
+	],
+	"workbench.colorCustomizations": {
+		"activityBar.background": "#342D08",
+		"titleBar.activeBackground": "#48400B",
+		"titleBar.activeForeground": "#FCFAED"
+	}
+}

@@ -1,0 +1,301 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+  engineType    = "binary"
+}
+
+generator nestjsDto {
+  provider                        = "prisma-generator-nestjs-dto"
+  output                          = "../src/common/dtos"
+  outputToNestJsResourceStructure = "true"
+  exportRelationModifierClasses   = "true"
+  reExport                        = "false"
+  createDtoPrefix                 = "Create"
+  updateDtoPrefix                 = "Update"
+  dtoSuffix                       = "Dto"
+  entityPrefix                    = ""
+  entitySuffix                    = ""
+  fileNamingStyle                 = "kebab"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Distributor {
+  id            Int       @id @default(autoincrement())
+  name          String
+  fullName      String
+  legalAddress  String?
+  actualAddress String?
+  inn           String    @unique @db.VarChar(255)
+  kpp           String?   @db.VarChar(255)
+  ogrn          String?   @db.VarChar(255)
+  manager       String?   @db.VarChar(255)
+  website       String?   @db.VarChar(255)
+  phone         String?   @db.VarChar(255)
+  email         String?   @db.VarChar(255)
+  info          String?
+  discount      Float
+  clients       Client[]
+  projects      Project[]
+  sales         Sale[]
+  tasks         Task[]
+  contacts      Contact[]
+  users         User[]
+  groups        Group[]
+
+  @@map("distributors")
+}
+
+model Group {
+  id            Int          @id @default(autoincrement())
+  name          String       @unique
+  clients       Client[]
+  projects      Project[]
+  distributor   Distributor? @relation(fields: [distributorId], references: [id])
+  distributorId Int?
+
+  @@map("groups")
+}
+
+model Client {
+  id            Int          @id @default(autoincrement())
+  name          String
+  fullName      String
+  legalAddress  String?
+  actualAddress String?
+  inn           String       @unique @db.VarChar(255)
+  kpp           String?      @db.VarChar(255)
+  ogrn          String?      @db.VarChar(255)
+  manager       String?      @db.VarChar(255)
+  website       String?      @db.VarChar(255)
+  phone         String?      @db.VarChar(255)
+  email         String?      @db.VarChar(255)
+  info          String?
+  distributor   Distributor? @relation(fields: [distributorId], references: [id])
+  distributorId Int?
+  group         Group        @relation(fields: [groupId], references: [id])
+  groupId       Int          @default(1)
+  projects      Project[]
+  tasks         Task[]
+  contacts      Contact[]
+  sales         Sale[]
+
+  @@map("clients")
+}
+
+model Contact {
+  id            Int         @id @default(autoincrement())
+  name          String
+  email         String      @db.VarChar(255)
+  phone         String?     @db.VarChar(255)
+  description   String?
+  clientId      Int
+  client        Client      @relation(fields: [clientId], references: [id])
+  distributorId Int
+  distributor   Distributor @relation(fields: [distributorId], references: [id])
+  tasks         Task[]
+
+  @@map("contacts")
+}
+
+model Project {
+  id            Int           @id @default(autoincrement())
+  name          String
+  description   String?
+  discount      Float?
+  startDate     DateTime
+  finishDate    DateTime?
+  status        ProjectStatus @relation(fields: [statusId], references: [id])
+  statusId      Int           @default(1)
+  distributorId Int
+  distributor   Distributor   @relation(fields: [distributorId], references: [id])
+  clientId      Int
+  client        Client        @relation(fields: [clientId], references: [id])
+  groupId       Int
+  group         Group         @relation(fields: [groupId], references: [id])
+  tasks         Task[]
+  sales         Sale[]
+
+  @@map("projects")
+}
+
+model ProjectStatus {
+  id       Int       @id @default(autoincrement())
+  name     String    @db.VarChar(255)
+  projects Project[]
+
+  @@map("project_statuses")
+}
+
+model Task {
+  id            Int          @id @default(autoincrement())
+  title         String
+  dateStarted   DateTime
+  dateEnded     DateTime?
+  content       String
+  status        TaskStatus   @relation(fields: [statusId], references: [id])
+  statusId      Int          @default(1)
+  distributorId Int?
+  distributor   Distributor? @relation(fields: [distributorId], references: [id])
+  clientId      Int?
+  client        Client?      @relation(fields: [clientId], references: [id])
+  projectId     Int?
+  project       Project?     @relation(fields: [projectId], references: [id])
+  userId        Int
+  user          User         @relation(fields: [userId], references: [id])
+  contactId     Int?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("tasks")
+}
+
+model TaskStatus {
+  id    Int    @id @default(autoincrement())
+  name  String @db.VarChar(255)
+  tasks Task[]
+
+  @@map("task_statuses")
+}
+
+model Category {
+  id            Int           @id @default(autoincrement())
+  name          String        @db.VarChar(255)
+  subcategories Subcategory[]
+  products      Product[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(255)
+  categoryId Int
+  category   Category  @relation(fields: [categoryId], references: [id])
+  products   Product[]
+
+  @@map("subcategories")
+}
+
+model Product {
+  id              Int              @id @default(autoincrement())
+  name            String
+  description     String?
+  price           Float
+  images          String[]
+  video           String?          @db.VarChar(255)
+  instruction     String?
+  properties      Property[]
+  saleContents    SaleContent[]
+  characteristics Characteristic[]
+  categoryId      Int
+  category        Category         @relation(fields: [categoryId], references: [id])
+  subcategoryId   Int?
+  subcategory     Subcategory?     @relation(fields: [subcategoryId], references: [id])
+
+  @@map("products")
+}
+
+model Property {
+  id        Int     @id @default(autoincrement())
+  img       String? @db.VarChar(255)
+  content   String
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("properties")
+}
+
+model Characteristic {
+  id        Int     @id @default(autoincrement())
+  name      String  @db.VarChar(255)
+  unit      String? @db.VarChar(255)
+  value     String  @db.VarChar(255)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("characteristics")
+}
+
+model Sale {
+  id            Int           @id @default(autoincrement())
+  date          DateTime
+  sum           Float
+  distributorId Int
+  distributor   Distributor   @relation(fields: [distributorId], references: [id])
+  clientId      Int
+  client        Client        @relation(fields: [clientId], references: [id])
+  projectId     Int
+  project       Project       @relation(fields: [projectId], references: [id])
+  userId        Int
+  user          User          @relation(fields: [userId], references: [id])
+  saleContent   SaleContent[]
+  statusId      Int
+  status        SaleStatus    @relation(fields: [statusId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("sales")
+}
+
+model SaleStatus {
+  id    Int    @id @default(autoincrement())
+  name  String @db.VarChar(255)
+  sales Sale[]
+
+  @@map("sale_statuses")
+}
+
+model SaleContent {
+  id        Int     @id @default(autoincrement())
+  price     Float
+  amount    Int
+  saleId    Int
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_contents")
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  name          String?      @db.VarChar(255)
+  phone         String?      @db.VarChar(255)
+  description   String       @db.VarChar(255)
+  password      String
+  salt          String
+  activated     Boolean      @default(false)
+  role          Role         @default(USER)
+  token         Token?
+  tasks         Task[]
+  sales         Sale[]
+  distributorId Int?
+  distributor   Distributor? @relation(fields: [distributorId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("users")
+}
+
+model Token {
+  id           Int      @id @default(autoincrement())
+  refreshToken String
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int      @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("tokens")
+}
+
+enum Role {
+  USER
+  ADMIN
+  DISTRIBUTOR
+}
